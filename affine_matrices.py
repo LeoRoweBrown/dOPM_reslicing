@@ -1,5 +1,23 @@
 import numpy as np
 
+def identity_matrix(square=True):
+    """
+    Generate a 4x4 or 3x4 affine matrix for identity transformation.
+    
+    Returns:
+    np.ndarray: 4x4 or 3x4 (if square=False) affine matrix for identity transformation.
+    """
+    matrix = np.array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ])
+    if not square:
+        matrix = np.delete(matrix, (3), axis=0)
+    
+    return matrix
+
 def scale_matrix(sx=1, sy=1, sz=1, square=True):
     """
     Generate a 4x4 or 3x4 affine matrix for scaling transformation.
