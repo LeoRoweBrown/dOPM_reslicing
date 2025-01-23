@@ -102,7 +102,7 @@ def rotation_matrix(theta, axis='z', square=True):
         
     return matrix
 
-def translation_matrix(tx, ty, tz=0, square=True):
+def translation_matrix(tx=0, ty=0, tz=0, square=True):
     """
     Generate a 4x4 or 3x4 affine matrix for translation transformation.
     
