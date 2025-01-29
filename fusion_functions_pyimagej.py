@@ -10,14 +10,47 @@ from npy2bdv import BdvWriter
 from napari import Viewer
 import lxml
 from datetime import datetime
+import imagej
+import scyjava
 
 def deskew_views_separately():
     """deskew views with pyimagej and bigstitcher"""
     pass
 
+def get_imagej_instance(memory_gb=60, 
+                        imagej_dir="A:/leo_imagej/fiji-win64/fiji-win64/Fiji.app",
+                        download_imagej=True,
+                        imagej_mode='interactive',
+                        imagej_download_options = ['sc.fiji:fiji:2.16.0', 
+                                                   'net.preibisch:BigStitcher:2.2.1',
+                                                   'net.preibisch:multiview-reconstruction:4.3.1']):
+    scyjava.config.add_option(f"-Xmx{memory_gb}g")
+
+    if 'ij' not in globals():
+        if download_imagej:
+            print("Downloading ImageJ with", imagej_download_options)
+            ij_instance = imagej.init(imagej_download_options, mode=imagej_mode)
+        elif imagej_dir is not None:
+            print(f"Opening ImageJ from {imagej_dir}")
+            ij_instance = imagej.init(imagej_dir, mode='interactive')
+        else:
+            raise FileNotFoundError("No imageJ dir given, use download ImageJ=True")
+        print("Created ImageJ instance", ij_instance.getVersion()) 
+    else:
+        print(f"ImageJ instance already exists ({ij_instance.getVersion()})")
+    return ij_instance
+
+def test_getimagej(imagej_download_options=['sc.fiji:fiji:2.16.0', 
+                                            'net.preibisch:BigStitcher:2.2.1',
+                                            'net.preibisch:multiview-reconstruction:4.3.1']):
+    ij = get_imagej_instance(imagej_download_options)
+
 def deskew_bdv_and_save_tiffs(bdv_dir, save_dir, pattern='pos_*',
                               separate_dirs=False,
-                              imagej_dir="C:/Users/lnr19/fiji-win64/Fiji.app"):
+                              imagej_instance=None,
+                              imagej_download_options=['sc.fiji:fiji:2.16.0', 
+                                                       'net.preibisch:BigStitcher:2.2.1',
+                                                       'net.preibisch:multiview-reconstruction:4.3.1']):
     if imagej_instance is None:
         ij = get_imagej_instance(imagej_download_options)
     else:
