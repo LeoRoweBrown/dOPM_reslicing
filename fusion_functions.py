@@ -42,24 +42,29 @@ def run_image_fusion_macro(in_dir, out_dir, imagej_dir,
                            save_fused=False,
                            fusion_type="[Avg, Blending]",
                            view='both',
-                           correct_voxel_dims=True):
+                           correct_voxel_dims=True,
+                           headless=True):
 
     xml_path = os.path.join(in_dir, "dataset.xml")
-
+    if headless:
+        headless_str = "--headless"
+    else:
+        headless_str = ""
+        
     # Build (windows) command
     # first build param list
-    params = "["+
-            f"xml_path={xml_path} " +
-            f"out_dir={out_dir} " +
-            f"downscale={downscale} " +
-            f"fusion_method={fusion_method} " +
-            f"view={view} " +
-            f"filename_addition={filename_addition}" +
-            "]"
+    params = f"""[
+            xml_path={xml_path} 
+            out_dir={out_dir}
+            downscale={downscale}
+            fusion_method={fusion_method}
+            view={view}
+            filename_addition={filename_addition}
+            ]"""
 
     imagej_exe = os.path.join(imagej_dir, "ImageJ-win64.exe")
-    macro_path = "imagej_macros/image_fusion.ijm"
-    command = imagej_exe + " " + macro_path + params
+    macro_path = "./imagej_macros/image_fusion.ijm"
+    command = f"{imagej_exe} --ij2 {headless_str} --console --run {macro_path} {params}"
 
     print("Running command: " + command)
     subprocess.run(command)
