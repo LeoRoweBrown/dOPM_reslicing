@@ -17,54 +17,60 @@ def deskew_views_separately():
     pass
 
 def deskew_bdv_and_save_tiffs(bdv_dir, save_dir, pattern='pos_*',
-                              separate_dirs=False,
+                              separate_dirs=False, opm_angle=45, 
                               imagej_dir="C:/Users/lnr19/fiji-win64/Fiji.app"):
-    if imagej_instance is None:
-        ij = get_imagej_instance(imagej_download_options)
-    else:
-        ij = imagej_instance
-        
-    bdv_dirs = glob(os.path.join(bdv_dir, pattern))
     
+    bdv_dirs = glob(os.path.join(bdv_dir, pattern))
+    print("found BDV dataset folders: \n", bdv_dirs)
+
     for bdv in bdv_dirs:
         dataset_xml_path = os.path.join(bdv, "dataset.xml")
         print(f"reslicing data in {dataset_xml_path}")
-        filename_addition = os.path.basename(dataset_xml_path)
+        filename_addition = os.path.basename(bdv)
+        print(filename_addition)
         save_path = save_dir
         if separate_dirs:
             save_path = os.path.join(save_dir, filename_addition)
         os.makedirs(save_path, exist_ok=True)
-        run_image_fusion_macro(ij, dataset_xml_path, save_dir, filename_addition=filename_addition)
+        run_image_fusion_macro(dataset_xml_path, save_dir, imagej_dir, filename_addition=filename_addition)
         
-def run_image_fusion_macro(in_dir, out_dir, imagej_dir,
+def run_image_fusion_macro(xml_path, out_dir, imagej_dir,
                            filename_addition="",
                            downscale=4,
                            save_fused=False,
-                           fusion_type="[Avg, Blending]",
+                           fusion_method="[Avg, Blending]",
                            view='both',
                            correct_voxel_dims=True,
-                           headless=True):
+                           headless=False,
+                           opm_angle=45,
+                           save_method="[Save as (compressed) TIFF stacks]"):
 
-    xml_path = os.path.join(in_dir, "dataset.xml")
-    if headless:
+    if headless:  # headless currently is broken and macro doesnt close. gotta use gui
         headless_str = "--headless"
     else:
         headless_str = ""
         
+    if save_fused:
+        save_fused_str = 'true'
+    else:
+        save_fused_str = 'false'
+    
+    filename_addition_view = filename_addition
+    
+    # if views is both and we're not fusing, run this twice (and save view in the filenames) TODO
+        
     # Build (windows) command
     # first build param list
-    params = f"""[
-            xml_path={xml_path} 
-            out_dir={out_dir}
-            downscale={downscale}
-            fusion_method={fusion_method}
-            view={view}
-            filename_addition={filename_addition}
-            ]"""
+    params = (f"\"xml_path='{xml_path}', out_dir='{out_dir}', downscale={downscale}," +
+             f"fusion_method='{fusion_method}', view='{view}'," +
+             f"filename_addition='{filename_addition}', save_method='{save_method}'," +
+             f"opm_angle={opm_angle}, save_fused={save_fused_str}\"")
 
     imagej_exe = os.path.join(imagej_dir, "ImageJ-win64.exe")
-    macro_path = "./imagej_macros/image_fusion.ijm"
-    command = f"{imagej_exe} --ij2 {headless_str} --console --run {macro_path} {params}"
+    abs_root_path = os.path.dirname(__file__)
+    macro_path = os.path.join(abs_root_path, "imagej_macros/image_fusion.ijm")
+    # macro_path = "./imagej_macros/image_fusion.ijm"
+    command = f"{imagej_exe} --ij2 {headless_str} --run {macro_path} {params}"
 
     print("Running command: " + command)
     subprocess.run(command)

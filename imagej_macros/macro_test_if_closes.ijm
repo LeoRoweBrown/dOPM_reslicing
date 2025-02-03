@@ -43,43 +43,10 @@ if (view == "1") {
 // make directories to save fused volumes
 makeDirectories(out_dir);
 
-print("run(Image Fusion," + 
-    "select=" + xml_path + 
-    " process_angle=" + angles + 
-    " process_channel=[All channels]" + 
-    " process_illumination=[All illuminations]" + 
-    " process_tile=[All tiles]" + 
-    " process_timepoint=[All Timepoints]" + 
-    " bounding_box=[Currently Selected Views]" + 
-    " downsampling=" + downscale + 
-    " interpolation=[Linear Interpolation]" + 
-    " fusion_type=" + fusion_method + 
-    " pixel_type=[16-bit unsigned integer]" + 
-    " interest_points_for_non_rigid=[-= Disable Non-Rigid =-]" + 
-    " produce=" + produce + 
-    " fused_image=" + save_method + 
-    " define_input=[Auto-load from input data (values shown below)]" + 
-    " output_file_directory=" + out_dir + 
-    " filename_addition=[" + filename_addition + "])");
-
-run("Image Fusion", 
-    "select=" + xml_path + 
-    " process_angle=" + angles + 
-    " process_channel=[All channels]" + 
-    " process_illumination=[All illuminations]" + 
-    " process_tile=[All tiles]" + 
-    " process_timepoint=[All Timepoints]" + 
-    " bounding_box=[Currently Selected Views]" + 
-    " downsampling=" + downscale + 
-    " interpolation=[Linear Interpolation]" + 
-    " fusion_type=" + fusion_method + 
-    " pixel_type=[16-bit unsigned integer]" + 
-    " interest_points_for_non_rigid=[-= Disable Non-Rigid =-]" + 
-    " produce=" + produce + 
-    " fused_image=" + save_method + 
-    " define_input=[Auto-load from input data (values shown below)]" + 
-    " output_file_directory=" + out_dir + 
-    " filename_addition=[" + filename_addition + "]");
+newImage("Untitled", "16-bit white", 1000, 1000, 100);
+run("Out [-]");
+run("Out [-]");
+run("Gradient (3D)", "use");
 	
 print("Quitting...");
 close("*");
