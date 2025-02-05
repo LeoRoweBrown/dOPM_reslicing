@@ -32,24 +32,35 @@ if (save_fused) {
     produce = "[Each view]";
 }
 
-if (view == "1") {
-    angle_in_file =  "[angle 0]";
-} else if (view == "2") {
-    angle_in_file = "[angle " + opm_angle * 2 + "]";
-} else if (view == "both") {
-    angles = "[All angles]";
-}
+process_angle = "[All angles]";
+processing_angle_line = "";
 
+if (view == "1") {
+    process_angle = "[Range of angles (Specify by Name)]";
+    // angle_in_file =  "[angle 0]";  "for processing_angle" (from list) param
+    angle_in_file = 0
+    processing_angle_line = " process_following_angles=" + angle_in_file;
+    print(angle_in_file);
+} else if (view == "2") {
+    process_angle = "[Range of angles (Specify by Name)]";
+    // angle_in_file = "[angle " + opm_angle * 2 + "]";
+    angle_in_file = opm_angle * 2
+    processing_angle_line = " processing_angle=" + angle_in_file;
+    print(angle_in_file);
+} else if (view == "both") {
+    process_angle = "[All angles]";
+}
 // make directories to save fused volumes
 makeDirectories(out_dir);
 
 print("run(Image Fusion," + 
     "select=" + xml_path + 
-    " process_angle=" + angles + 
+    " process_angle=" + process_angle + 
     " process_channel=[All channels]" + 
     " process_illumination=[All illuminations]" + 
     " process_tile=[All tiles]" + 
     " process_timepoint=[All Timepoints]" + 
+        processing_angle_line +
     " bounding_box=[Currently Selected Views]" + 
     " downsampling=" + downscale + 
     " interpolation=[Linear Interpolation]" + 
@@ -64,11 +75,12 @@ print("run(Image Fusion," +
 
 run("Image Fusion", 
     "select=" + xml_path + 
-    " process_angle=" + angles + 
+    " process_angle=" + process_angle + 
     " process_channel=[All channels]" + 
     " process_illumination=[All illuminations]" + 
     " process_tile=[All tiles]" + 
     " process_timepoint=[All Timepoints]" + 
+        processing_angle_line +
     " bounding_box=[Currently Selected Views]" + 
     " downsampling=" + downscale + 
     " interpolation=[Linear Interpolation]" + 
@@ -82,7 +94,8 @@ run("Image Fusion",
     " filename_addition=[" + filename_addition + "]");
 	
 print("Quitting...");
-close("*");
+// close("*");
 // setOption("Changes",false);
-setKeyDown("Esc");
+// setKeyDown("Esc");
+// waitForUser("Check the result before quitting.");
 run("Quit");
