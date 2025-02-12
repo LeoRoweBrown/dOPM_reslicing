@@ -3,7 +3,6 @@ import numpy as np
 from tifffile import imwrite, imread, tiffcomment, TiffFile
 from glob import glob
 import os
-from pathlib import Path
 import affine_matrices as affine
 from scipy.ndimage import affine_transform
 from timeit import default_timer as timer
@@ -55,21 +54,23 @@ def run_image_fusion_macro(xml_path, out_dir, imagej_dir,
                            save_method="[Save as (compressed) TIFF stacks]",
                            legacy=False):
 
-    headless_str = "--headless" if headless else ""
-    save_fused_str = 'false' if legacy else 'true'
-    produce = "[Each view]" if legacy else "[Each timepoint & channel]"
+    if headless:  # in headless macro doesnt close. eval(\"script\", \"System.exit(0);\") might work
+        headless_str = "--headless"
+    else:
+        headless_str = ""
     
-    # Ensure paths are Path objects
-    xml_path = Path(xml_path)
-    out_dir = Path(out_dir)
-    imagej_dir = Path(imagej_dir)
+    # this param just determines whether 
+    if legacy:
+        produce = "[Each view]"
+    else:
+        produce = "[Each timepoint & channel]"
 
     # for the fused case where we run the command once, put these into 1 length lists
     filename_addition_views = [filename_addition]
     views = [view]
     
-    if not save_fused and not legacy:
-        bdv_xml = BdvEditor(str(xml_path))
+    if not save_fused:
+        bdv_xml = BdvEditor(xml_path)
 
         ## if you choose to reslice both views but separately (NO FUSION) and there are indeed two views
         if view == 'both': 
@@ -79,8 +80,6 @@ def run_image_fusion_macro(xml_path, out_dir, imagej_dir,
             if bdv_xml.nangles == 2:
                 filename_addition_views = [filename_addition+"view_1", filename_addition+"view_2"]
                 views = ['1', '2']
-        del bdv_xml  # very important! keeps a handle on xml, meaning mvr/bigstitcher cant open the xml and HDF 
-        # (appears as HDF5 IO exception in imagej)
     else:
         print("Saving both views fused together!")
 
@@ -90,7 +89,7 @@ def run_image_fusion_macro(xml_path, out_dir, imagej_dir,
     for v_i in range(len(views)):
         # Build (windows) command
         # first build param list
-        params = (f"\"xml_path='{xml_path.as_uri()}', out_dir='{out_dir}', downscale={downscale}," +
+        params = (f"\"xml_path='{xml_path}', out_dir='{out_dir}', downscale={downscale}," +
                 f"fusion_method='{fusion_method}', view='{views[v_i]}'," +
                 f"filename_addition='{filename_addition_views[v_i]}', save_method='{save_method}'," +
                 f"opm_angle={opm_angle}, produce='{produce}'\"")
@@ -100,29 +99,9 @@ def run_image_fusion_macro(xml_path, out_dir, imagej_dir,
         macro_path = os.path.join(abs_root_path, "imagej_macros/image_fusion.ijm")
         # macro_path = "./imagej_macros/image_fusion.ijm"
         command = f"start /b {imagej_exe} --ij2 {headless_str} --run {macro_path} {params}"
-        command_flags = f"{imagej_exe} --ij2 {headless_str} --run {macro_path} {params} -Xmx64g -XX:MaxDirectMemorySize=32g -XX:+PrintFlagsFinal"
-        command = f"{imagej_exe} --ij2 {headless_str} --run {macro_path} {params}"
+        command = f"{imagej_exe} --ij2 {headless_str} --run {macro_path} {params} -Xmx64g -XX:MaxDirectMemorySize=32g -XX:+PrintFlagsFinal"
         command2 = f"ImageJ-win64.exe --ij2 {headless_str} --run --console {macro_path} {params}"
 
-        command_comb = (
-            '"A:/leo_imagej/new/fiji-win64/Fiji.app/ImageJ-win64.exe" --ij2 '+
-            '--run ' + macro_path + ' ' +
-            '"xml_path=\'' + xml_path.as_uri() + '\', ' +
-            'out_dir=\'' + out_dir.as_posix() + '\', ' +
-            'downscale=4, fusion_method=\'[Avg, Blending]\', view=\'1\', '+
-            'filename_addition=\'' + filename_addition_views[v_i] + '\', save_method=\'[Save as (compressed) TIFF stacks]\', '+
-            'opm_angle=45, produce=\'[Each timepoint & channel]\'"'
-        )
-        command_test = (
-            '"A:/leo_imagej/new/fiji-win64/Fiji.app/ImageJ-win64.exe" --ij2 '+
-            '--run "C:/Users/CRICKOPMuser/Documents/Leo/code/dOPM_reslicing/imagej_macros/image_fusion.ijm" '+
-            '"xml_path=\'file:///A:/leo/micromanager/bone_marrow_2nd/control/1pos_2048_test/deskewed_20250206-121256/pos_p0000/dataset.xml\', '+
-            'out_dir=\'A:/leo/micromanager/bone_marrow_2nd/control/1pos_2048_test/deskewed_20250206-121256/fused_tiffs_2\', '+
-            'downscale=4, fusion_method=\'[Avg, Blending]\', view=\'1\', '+
-            'filename_addition=\'pos_p0000view_1\', save_method=\'[Save as (compressed) TIFF stacks]\', '+
-            'opm_angle=45, produce=\'[Each timepoint & channel]\'"'
-        )
-        
         print("Running command: " + command)
         # subprocess.run(command)process = subprocess.Popen(["imagej.exe", "-macro", "macro.ijm"], creationflags=subprocess.CREATE_NO_WINDOW)
         #subprocess.run(command2, cwd=imagej_dir, shell=True)
@@ -133,7 +112,6 @@ def run_image_fusion_macro(xml_path, out_dir, imagej_dir,
             subprocess.run(
                 command,
                 check=True,
-                shell=True,
                 stdout=subprocess.PIPE,  # Capture standard output
                 stderr=subprocess.PIPE,  # Capture error output
                 text=True,  # Ensure output is captured as a string (Python 3.7+),

@@ -10,6 +10,7 @@ from timeit import default_timer as timer
 from npy2bdv import BdvWriter
 from napari import Viewer
 import lxml
+from helper_functions import tiffio
 from datetime import datetime
 
 def parse_tiff_dirs(tiff_data_dir, opm_angle=45):
@@ -182,6 +183,8 @@ def create_bdv_datasets(tiff_data_dir, out_dir, opm_angle=45, stop_at_position=N
                 print("loading",  stacks[i])
                 with TiffFile(stacks[i]) as tif:
                     mm_metadata = tif.micromanager_metadata
+                    pos_label = mm_metadata['Summary']['UserData']['positionLabel']['scalar']
+
                     for n, page in enumerate(tif.pages):
                         # print("page", n)
                         imstack[n+offset,:,:] = page.asarray() # expects zyx
@@ -235,9 +238,11 @@ def create_bdv_datasets(tiff_data_dir, out_dir, opm_angle=45, stop_at_position=N
                 angle=angle_i, time=time_i, tile=z_i, channel=channel_i, illumination=0)
             if angle > 0:
                 z_extent_px = size_zp*np.sin(opm_angle*np.pi/180)
-                bdv_writer.append_affine(affine.translation_matrix(tz=z_extent_px, square=False),
+                bdv_writer.append_affine(affine.translation_matrix(tz=-z_extent_px, square=False),
                     name_affine='translation for second view',
                     angle=angle_i, time=time_i, tile=z_i, channel=channel_i, illumination=0)
+                
+                # below is future feature for external registration matrix i.e. from beads
                 if registration_matrix is not None:
                     bdv_writer.append_affine(registration_matrix,
                         name_affine='view registration',
